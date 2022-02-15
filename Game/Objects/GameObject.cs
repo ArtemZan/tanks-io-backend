@@ -1,6 +1,6 @@
 namespace TanksIO.Game.Objects
 {
-    class GameObject : Mesh
+    abstract class GameObject : Mesh
     {
         public readonly string Id;
 

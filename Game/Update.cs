@@ -22,39 +22,52 @@ namespace TanksIO.Game
             return new JSON().Set("dir", Dir).Set("pos", Pos).ToString();
         }
     }
-    abstract record ObjectUpdate(string Id);
-
-    record TransformUpdate : ObjectUpdate
+    record ObjectUpdate(string Id, UpdatePayload payload)
     {
-        Mat2x3 Transform;
+        public override string ToString()
+        {
+            return new JSON().Set("id", Id, true).Merge(payload.ToJSON()).ToString();
+        }
+    }
 
-        public TransformUpdate(string id, Mat2x3 transform)
-            : base(id)
+    abstract class UpdatePayload {
+        public abstract JSON ToJSON();
+
+        public override string ToString()
+        {
+            return ToJSON().ToString();
+        }
+    }
+
+    class TransformUpdatePayload : UpdatePayload
+    {
+        public Mat2x3 Transform;
+
+        public TransformUpdatePayload(Mat2x3 transform)
         {
             Transform = transform;
         }
 
-        public override string ToString()
+        public override JSON ToJSON()
         {
-            return new JSON().Set("id", Id, true).Set("trfm", Transform).ToString();
+            return new JSON().Set("trfm", Transform);
         }
-    };
+    }
 
-    record VerticesUpdate : ObjectUpdate
+    class VerticesUpdatePayload : UpdatePayload
     {
-        Vec2[] Vertices;
+        public Vec2[] Vertices;
 
-        public VerticesUpdate(string id, Vec2[] vertices)
-            : base(id)
+        public VerticesUpdatePayload(Vec2[] vertices)
         {
             Vertices = vertices;
         }
 
-        public override string ToString()
+        public override JSON ToJSON()
         {
-            return new JSON().Set("id", Id, true).Set("vert", new JSON().PushAll(Vertices)).ToString();
+            return new JSON().Set("vert", new JSON().PushAll(Vertices));
         }
-    };
+    }
 
     class Update
     {

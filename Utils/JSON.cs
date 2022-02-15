@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 namespace TanksIO.Utils
 {
@@ -54,6 +55,22 @@ namespace TanksIO.Utils
             foreach (T value in values)
             {
                 Push(value, wrapValuesInQuotes);
+            }
+
+            return this;
+        }
+
+        public JSON Merge(JSON json)
+        {
+            if(_isArray || json._isArray)
+            {
+                Console.WriteLine("Connot merge JSON arrays!");
+                return this;
+            }
+
+            foreach((string key, string value) in json._fields)
+            {
+                _fields.Add(key, value);
             }
 
             return this;

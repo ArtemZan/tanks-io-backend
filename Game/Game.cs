@@ -60,8 +60,8 @@ namespace TanksIO.Game
 
         public void UpdateAll()
         {
-            _update.Obj = Scene.GameObjects.Select(pair => (ObjectUpdate)new VerticesUpdate(pair.Key, pair.Value.GetVertices())).ToList();
-            _update.Obj.AddRange(Players.Select(pair => (ObjectUpdate)new VerticesUpdate(pair.Key, pair.Value.Tank.GetVertices())));
+            _update.Obj = Scene.GameObjects.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.GetVertices()))).ToList();
+            _update.Obj.AddRange(Players.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Tank.GetVertices()))));
         }
 
         private void GameLoop()
@@ -101,12 +101,19 @@ namespace TanksIO.Game
 
         private void OnUpdate(double dTime)
         {
-            if (_update.Obj.Count == 0)
+            //if (_update.Obj.Count == 0)
+            //{
+            //    return;
+            //}
+
+            foreach((_, Player player) in Players)
             {
-                return;
+                UpdatePayload payload = player.Tank.Update(dTime);
+                if(payload != null)
+                {
+                    _update.Obj.Add(new(player.Id, payload));
+                }
             }
-
-
 
 
         }

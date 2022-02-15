@@ -27,5 +27,20 @@ namespace TanksIO.Sockets
         {
             return _rooms.Find(room => room.Id == id);
         }
+
+        public static (Player, Room) FindPlayer(string id)
+        {
+            foreach(Room room in _rooms)
+            {
+                Player player = room.GetPlayer(id);
+
+                if(player != null)
+                {
+                    return (player, room);
+                }
+            }
+
+            return (null, null);
+        }
     }
 }

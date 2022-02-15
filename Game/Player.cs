@@ -18,6 +18,12 @@ namespace TanksIO.Game
 
         public static bool operator ==(Player p1, Player p2)
         {
+            if ((object)p1 == null && (object)p2 == null)
+                return true;
+
+            if ((object)p1 == null || (object)p2 == null)
+                return false;
+
             return p1.Id == p2.Id;
         }
 

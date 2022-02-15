@@ -23,6 +23,12 @@ namespace TanksIO.Sockets
 
         public static bool operator==(Room r1, Room r2)
         {
+            if ((object)r1 == null && (object)r2 == null)
+                return true;
+
+            if ((object)r1 == null || (object)r2 == null)
+                return false;
+
             return r1.Id == r2.Id;
         }
 
@@ -88,7 +94,7 @@ namespace TanksIO.Sockets
 
             if (_game.Players.Count <= 1 /* For now always 1 */)
             {
-                Send(GameEventType.GameEnded);
+                StopGame();
             }
 
             return player;
@@ -109,6 +115,12 @@ namespace TanksIO.Sockets
             Send(new PayloadEvent(GameEventType.GameStarted));
             _game.Start();
             _game.UpdateAll();
+        }
+
+        public void StopGame()
+        {
+            Send(GameEventType.GameEnded);
+            _game.Stop();
         }
 
 
