@@ -129,7 +129,7 @@ namespace TanksIO.Sockets
             foreach (KeyValuePair<string, Player> pair in _game.Players)
             {
                 GameHub.context.Clients.Client(pair.Key).SendAsync(@event.TypeToString(), @event.GetPayload(pair.Key));
-                Console.WriteLine("Sent message to " + pair.Key + ": " + @event.TypeToString() + "[ " + @event.GetPayload(pair.Key) + " ]");
+                //Console.WriteLine("Sent message to " + pair.Key + ": " + @event.TypeToString() + "[ " + @event.GetPayload(pair.Key) + " ]");
             }
         }
 
@@ -162,7 +162,7 @@ namespace TanksIO.Sockets
             Send(GameEventType.Update, (string id) =>
             {
                 Player player = GetPlayer(id);
-                update.Player = new PlayerUpdate(player.Dir, player.Pos);
+                update.Player = new PlayerUpdate(player.Tank.Dir, player.Tank.Pos);
 
                 return update.ToString();
             });

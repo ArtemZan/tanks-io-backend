@@ -6,8 +6,6 @@ namespace TanksIO.Game
     class Player
     {
         readonly public string Id;
-        public Vec2 Dir;
-        public Vec2 Pos;
 
         public Tank Tank;
 

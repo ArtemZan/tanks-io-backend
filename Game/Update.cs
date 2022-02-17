@@ -42,15 +42,17 @@ namespace TanksIO.Game
     class TransformUpdatePayload : UpdatePayload
     {
         public Mat2x3 Transform;
+        public Vec2 Origin;
 
-        public TransformUpdatePayload(Mat2x3 transform)
+        public TransformUpdatePayload(Mat2x3 transform, Vec2 origin)
         {
             Transform = transform;
+            Origin = origin;
         }
 
         public override JSON ToJSON()
         {
-            return new JSON().Set("trfm", Transform);
+            return new JSON().Set("trfm", Transform).Set("or", Origin);
         }
     }
 

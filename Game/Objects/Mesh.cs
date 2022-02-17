@@ -44,7 +44,7 @@ namespace TanksIO.Game.Objects
             {
                 Vertices[v] -= origin;
                 Vertices[v] = transform * new Vec3(Vertices[v], 1);
-                Vertices[v] -= origin;
+                Vertices[v] += origin;
             }
 
             return this;
@@ -69,7 +69,7 @@ namespace TanksIO.Game.Objects
             {
                 Vertices[v] -= origin;
                 Vertices[v] = transform * Vertices[v];
-                Vertices[v] -= origin;
+                Vertices[v] += origin;
             }
 
             return this;

@@ -66,7 +66,7 @@ namespace TanksIO.Game
 
         private void GameLoop()
         {
-            const int fps = 30;
+            const int fps = 100;
             const int mspf = 1000 / fps;
 
             Stopwatch timer = new();
@@ -101,10 +101,7 @@ namespace TanksIO.Game
 
         private void OnUpdate(double dTime)
         {
-            //if (_update.Obj.Count == 0)
-            //{
-            //    return;
-            //}
+            //Console.WriteLine("Time: " + dTime);
 
             foreach((_, Player player) in Players)
             {

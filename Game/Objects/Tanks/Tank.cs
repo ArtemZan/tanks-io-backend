@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 
 namespace TanksIO.Game.Objects.Tanks
 {
@@ -19,22 +19,26 @@ namespace TanksIO.Game.Objects.Tanks
         //    object payload;
         //}
 
+        public Vec2 Dir = new(0, 1);
+        public Vec2 Pos = new();
 
-        protected Vec2 TurretDir = new(0, 1);
-        protected double TurretRotation;
-        protected Vec2 DesiredTurretDir = new(0, 1);
+        public double Speed = 0;
 
         /// <summary>
         /// Measured in radians per second
         /// </summary>
-        private double _rotationSpeed;
+        public double RotationSpeed = 0;
 
-        private Vec2 _pos;
-        protected double Rotation;
+        protected Vec2 TurretDir = new(0, 1);
+        protected double TurretRotation = System.Math.PI / 2;
+        protected Vec2 DesiredTurretDir = new(0, 1);
+
+
+        protected double Rotation = System.Math.PI / 2;
 
         //private UpdateAction[] _updatePipeline;
         protected TankVertMap VertMap;
-        
+
         public Tank(TankVertMap vertMap)
         {
             VertMap = vertMap;
@@ -48,11 +52,11 @@ namespace TanksIO.Game.Objects.Tanks
         protected abstract double GetTurretRotationSpeed();
 
         /// <summary>
-        /// Rotates the turret vertices and updates _turretDir and _turretRotation
+        /// Rotates the turret vertices and updates TurretDir and TurretRotation
         /// </summary> 
         private void RotateTurret(double angle)
         {
-            TransformHull(Mat2.Rotation(angle));
+            TransformTurret(Mat2.Rotation(angle));
 
             TurretRotation += angle;
             TurretDir.X = System.Math.Cos(TurretRotation);
@@ -61,14 +65,17 @@ namespace TanksIO.Game.Objects.Tanks
 
         private void RotateHull(double angle)
         {
-            Transform(Mat2.Rotation(angle), 0, VertMap.HullSize, _pos);
+            Transform(Mat2.Rotation(angle), 0, VertMap.HullSize, Pos);
 
             Rotation += angle;
+
+            Dir.X = System.Math.Cos(Rotation);
+            Dir.Y = System.Math.Sin(Rotation);
         }
 
-        private void TransformHull(Mat2 transform)
+        private void TransformTurret(Mat2 transform)
         {
-            Transform(transform, VertMap.HullSize, VertMap.HullSize + VertMap.TurretSize, _pos);
+            Transform(transform, VertMap.HullSize, VertMap.HullSize + VertMap.TurretSize, Pos);
         }
 
 
@@ -76,35 +83,60 @@ namespace TanksIO.Game.Objects.Tanks
         {
             Mat2x3 transform = new(1);
 
+            bool shouldRotate = System.Math.Abs(RotationSpeed) > 1e-5;
+            bool shouldMove = System.Math.Abs(Speed) > 1e-5;
+
             bool isUpdated = false;
             bool isTransform = true;
 
-            if(System.Math.Abs(_rotationSpeed) * dTime > 1e-3)
+            Vec2 startPos = Pos;
+
+            if (shouldRotate)
             {
                 isUpdated = true;
 
-                double rotAngle = _rotationSpeed * dTime;
+                double rotAngle = RotationSpeed * dTime;
                 transform = Mat2.Rotation(rotAngle) * transform;
                 RotateHull(rotAngle);
             }
 
+            if(shouldMove)
+            {
+                isUpdated = true;
 
-            double turretSpeed = GetTurretRotationSpeed();
-            if(System.Math.Abs(turretSpeed) * dTime > 1e-4)
+                Vec2 dPos = Dir * Speed * dTime;
+
+                transform.K += dPos;
+                Transform(new Mat2x3(new(1, 0), new(0, 1), dPos), startPos);
+                Pos += dPos;
+            }
+
+
+            double turretAbsRotationSpeed = GetTurretRotationSpeed();
+            double turretRelRotationSpeed = turretAbsRotationSpeed + RotationSpeed;
+            //Console.WriteLine("Aim dir: " + DesiredTurretDir + ". Turret dir: " + TurretDir + ". Rotation speed: " + RotationSpeed);
+            if (System.Math.Abs(turretRelRotationSpeed) > 1e-6)
             {
                 isUpdated = true;
                 isTransform = false;
             }
-            RotateTurret((turretSpeed + _rotationSpeed) * dTime);
 
-            if(!isUpdated)
+            if(System.Math.Abs(turretAbsRotationSpeed) > 1e-6)
+            {
+                RotateTurret(turretAbsRotationSpeed * dTime);
+            }
+
+
+
+
+            if (!isUpdated)
             {
                 return null;
             }
 
-            if(isTransform)
+            if (isTransform)
             {
-                return new TransformUpdatePayload(transform);
+                return new TransformUpdatePayload(transform, startPos);
             }
 
             return new VerticesUpdatePayload(GetVertices());

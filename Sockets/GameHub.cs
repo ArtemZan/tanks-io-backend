@@ -69,8 +69,6 @@ namespace TanksIO.Sockets
         {
             Vec2 dir = JsonConvert.DeserializeObject<Vec2>(dirString);
 
-            Console.WriteLine(dir);
-
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
             if(player == null)
@@ -100,24 +98,32 @@ namespace TanksIO.Sockets
 
         }
 
-        public void StartRotating(bool ccw)
+        public void StartRotating(bool cw)
         {
+            (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
+            player.Tank.RotationSpeed = 1e-3 * (cw ? -1 : 1);
         }
 
         public void StopRotating()
         {
+            (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
+            player.Tank.RotationSpeed = 0;
         }
 
         public void StartMoving(bool forward)
         {
+            (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
+            player.Tank.Speed = 5e-3 * (forward ? 1 : -1);
         }
 
         public void StopMoving()
         {
+            (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
+            player.Tank.Speed = 0;
         }
 
     }
