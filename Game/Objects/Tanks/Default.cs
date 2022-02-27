@@ -5,11 +5,12 @@ namespace TanksIO.Game.Objects.Tanks
 
     class DefaultTank : Tank
     {
-        public DefaultTank(string id)
-            : base(new(6, 6))
+        public DefaultTank()
         {
-            Merge(new Rectangle(new(2, 5)));
-            Merge(new Rectangle(new(0.15, 3)).Transform(new Mat2x3(new(1, 0), new(0, 1), new(0, 2.4))));
+            Merge(new Rectangle(new(5, 2)));
+            DynamicMesh turret = new(new Rectangle(new(3, 0.15)).Transform(new Mat2x3(new(1, 0), new(0, 1), new(2.4, 0))));
+            Turret = turret;
+            Add(turret);
         }
 
         protected override double GetTurretRotationSpeed()
@@ -17,15 +18,16 @@ namespace TanksIO.Game.Objects.Tanks
             const double rotSpeedK = 0.003;
             double rotSpeed = 0;
 
-            //turretDir = new Vec2(System.Math.Cos(TurretRotation), System.Math.Sin(TurretRotation));
+            double absRot = Turret.Rot + Rot;
+            Vec2 absDir = new(System.Math.Cos(absRot), System.Math.Sin(absRot));
 
             int dir = 1;
-            if (DesiredTurretDir.Cross(TurretDir) > 0)
+            if (DesiredTurretDir.Cross(absDir) > 0)
             {
                 dir = -1;
             }
 
-            double dif = (DesiredTurretDir - TurretDir).Length();
+            double dif = (DesiredTurretDir - absDir).Length();
 
             const double brakingDistance = 0.5;
 

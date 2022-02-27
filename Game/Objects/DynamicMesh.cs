@@ -5,10 +5,21 @@ namespace TanksIO.Game.Objects
 {
     using Math;
 
-    abstract class DynamicMesh : Mesh
+    class DynamicMesh : Mesh
     {
         public double Speed;
         public double RotSpeed;
+
+        public DynamicMesh()
+        {
+
+        }
+
+        public DynamicMesh(Mesh mesh)
+            : base(mesh)
+        {
+
+        }
 
         public override UpdatePayload Update(double dTime)
         {
@@ -20,20 +31,25 @@ namespace TanksIO.Game.Objects
 
             bool childUpdated = false;
 
-            foreach ((_, Mesh mesh) in Children)
+            if (Children != null)
             {
-                mesh.Rotate(angle);
-                mesh.Move(offset);
-
-                if (mesh.Update(dTime) != null)
+                foreach ((_, Mesh mesh) in Children)
                 {
-                    childUpdated = true;
+                    if (mesh.Update(dTime) != null)
+                    {
+                        childUpdated = true;
+                    }
                 }
             }
 
             if (childUpdated)
             {
-                return new VerticesUpdatePayload(GetOwnVertices());
+                return new VerticesUpdatePayload(GetVertices());
+            }
+
+            if (System.Math.Abs(angle) < 1e-6 && offset.Length() < 1e-6)
+            {
+                return null;
             }
 
             Mat2 rot = Mat2.Rotation(angle);

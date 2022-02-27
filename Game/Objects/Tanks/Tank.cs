@@ -143,15 +143,13 @@ namespace TanksIO.Game.Objects.Tanks
 
     abstract class Tank : DynamicMesh
     {
+        public DynamicMesh Turret;
 
-        protected Vec2 TurretDir = new(0, 1);
-        protected double TurretRotation = System.Math.PI / 2;
-        protected Vec2 DesiredTurretDir = new(0, 1);
-
-        protected double Rotation = System.Math.PI / 2;
+        protected Vec2 DesiredTurretDir = new(1, 0);
 
         //The machine properties
         public readonly double MaxSpeed;
+        public readonly double BarrelLength;
 
         public Tank()
         {
@@ -166,36 +164,14 @@ namespace TanksIO.Game.Objects.Tanks
 
         protected abstract double GetTurretRotationSpeed();
 
-        /// <summary>
-        /// Rotates the turret vertices and updates TurretDir and TurretRotation
-        /// </summary> 
-        private void RotateTurret(double angle)
-        {
-            TransformTurret(Mat2.Rotation(angle));
-
-            TurretRotation += angle;
-            TurretDir.X = System.Math.Cos(TurretRotation);
-            TurretDir.Y = System.Math.Sin(TurretRotation);
-        }
-
-        private void RotateHull(double angle)
-        {
-            Transform(Mat2.Rotation(angle), 0, VertMap.HullSize, Pos);
-
-            Rotation += angle;
-
-            Dir.X = System.Math.Cos(Rotation);
-            Dir.Y = System.Math.Sin(Rotation);
-        }
-
-        private void TransformTurret(Mat2 transform)
-        {
-            Transform(transform, VertMap.HullSize, VertMap.HullSize + VertMap.TurretSize, Pos);
-        }
-
 
         public override UpdatePayload Update(double dTime)
         {
+            Turret.RotSpeed = GetTurretRotationSpeed();
+
+            return base.Update(dTime);
+
+            /* 
             Mat2x3 transform = new(1);
 
             bool shouldRotate = System.Math.Abs(RotationSpeed) > 1e-5;
@@ -255,6 +231,7 @@ namespace TanksIO.Game.Objects.Tanks
             }
 
             return new VerticesUpdatePayload(GetOwnVertices());
+            */
         }
     }
 }

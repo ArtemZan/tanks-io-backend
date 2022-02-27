@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 namespace TanksIO.Game.Objects
 {
@@ -35,9 +36,14 @@ namespace TanksIO.Game.Objects
 
         public void Add(Mesh mesh, uint id)
         {
+            if (Children == null)
+            {
+                Children = new();
+            }
+
             mesh.Parent = this;
 
-            if(Children.ContainsKey(id))
+            if (Children.ContainsKey(id))
             {
                 Console.WriteLine("Warning: a mesh with such id already exists. It will be replaced with a new mesh");
             }
@@ -47,6 +53,11 @@ namespace TanksIO.Game.Objects
 
         public void Add(Mesh mesh)
         {
+            if (Children == null)
+            {
+                Children = new();
+            }
+
             for (uint i = (uint)Children.Count; i < uint.MaxValue; i++)
             {
                 if (!Children.ContainsKey(i))
@@ -56,7 +67,7 @@ namespace TanksIO.Game.Objects
                 }
             }
 
-            for(uint i = 0; i < (uint)Children.Count; i++)
+            for (uint i = 0; i < (uint)Children.Count; i++)
             {
                 if (!Children.ContainsKey(i))
                 {
@@ -83,6 +94,23 @@ namespace TanksIO.Game.Objects
         }
 
         public Vec2[] GetOwnVertices() => Vertices.ToArray();
+
+        public Vec2[] GetVertices()
+        {
+            if (Children == null)
+            {
+                return GetOwnVertices();
+            }
+
+            List<Vec2> res = new(GetOwnVertices());
+
+            foreach ((_, Mesh child) in Children)
+            {
+                res.AddRange(child.GetVertices());
+            }
+
+            return res.ToArray();
+        }
 
         /// <summary>
         /// Transforms a range of vertices
@@ -148,19 +176,82 @@ namespace TanksIO.Game.Objects
             return Transform(transform, 0, Vertices.Count, origin);
         }
 
+        /// <summary>
+        /// Moves the mesh with all children
+        /// </summary>
         public Mesh Move(Vec2 offset)
         {
-            for (int v = 0; v < Vertices.Count; v++)
-            {
-                Vertices[v] += offset;
-            }
+            MoveVertices(offset);
 
             _position += offset;
 
             return this;
         }
 
+        /// <summary>
+        /// Moves the mesh itself (without children)
+        /// </summary>
+        public Mesh MoveSelf(Vec2 offset)
+        {
+            MoveOwnVertices(offset);
+
+            _position += offset;
+
+            return this;
+        }
+
+
+        /// <summary>
+        /// Moves the mesh itself (without children) without updating '_position' ('Pos')
+        /// </summary>
+        private void MoveOwnVertices(Vec2 offset)
+        {
+            for (int v = 0; v < Vertices.Count; v++)
+            {
+                Vertices[v] += offset;
+            }
+        }
+
+        /// <summary>
+        /// Moves the mesh with all children without updating '_position' ('Pos')
+        /// </summary>
+        private void MoveVertices(Vec2 offset)
+        {
+            MoveOwnVertices(offset);
+
+            if (Children != null)
+            {
+                foreach ((_, Mesh mesh) in Children)
+                {
+                    mesh.MoveVertices(offset);
+                }
+            }
+        }
+
         public Mesh Rotate(double angle, Vec2 origin)
+        {
+            RotateVertices(angle, origin);
+
+            _rotation += angle;
+
+            return this;
+        }
+
+        public Mesh Rotate(double angle)
+        {
+            return Rotate(angle, Pos + (Parent == null ? new() : Parent.Pos));
+        }
+
+        public Mesh RotateSelf(double angle, Vec2 origin)
+        {
+            RotateOwnVertices(angle, origin);
+
+            _rotation += angle;
+
+            return this;
+        }
+
+        private void RotateOwnVertices(double angle, Vec2 origin)
         {
             Mat2 mat = Mat2.Rotation(angle);
 
@@ -168,13 +259,20 @@ namespace TanksIO.Game.Objects
             {
                 Vertices[v] = mat * (Vertices[v] - origin) + origin;
             }
-
-            return this;
         }
 
-        public Mesh Rotate(double angle)
+        // To be optimised: the rotation matrix is created for every children
+        private void RotateVertices(double angle, Vec2 origin)
         {
-            return Rotate(angle, Parent == null ? new() : Parent.Pos);
+            RotateOwnVertices(angle, origin);
+            
+            if (Children != null)
+            {
+                foreach ((_, Mesh mesh) in Children)
+                {
+                    mesh.RotateVertices(angle, origin);
+                }
+            }
         }
 
         public virtual UpdatePayload Update(double dTime) { return null; }

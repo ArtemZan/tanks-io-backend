@@ -4,7 +4,7 @@ namespace TanksIO.Utils
 {
     class IdGenerator
     {
-        private enum IdType
+        public enum IdType
         {
             ALPHABETIC,
             NUMRICAL,
@@ -30,21 +30,19 @@ namespace TanksIO.Utils
             {
                 case IdType.ALPHABETIC:
                     {
-                        Random(length, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-                        break;
+                        return Random(length, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
                     }
                 case IdType.NUMRICAL:
                     {
-                        Random(length, "0123456789");
-                        break;
+                        return Random(length, "0123456789");
                     }
                 case IdType.ALPHA_NUM:
                     {
-                        Random(length, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-                        break;
+                        return Random(length, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
                     }
-                    case 
             }
+
+            return "";
         }
     }
 }

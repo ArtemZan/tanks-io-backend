@@ -65,9 +65,9 @@ namespace TanksIO.Sockets
         public Player CreatePlayer(string id)
         {
             Player player = new(id);
-            player.Tank = new DefaultTank(id);
+            player.Tank = new DefaultTank();
 
-            _game.Scene.Players.Add(player.Id, player);
+            _game.Scene.Players.Add(id, player);
             Send(GameEventType.PlayerJoined, id);
 
             if(_game.Scene.Players.Count >= 2)

@@ -102,14 +102,14 @@ namespace TanksIO.Sockets
         {
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
-            player.Tank.RotationSpeed = 1e-3 * (cw ? -1 : 1);
+            player.Tank.RotSpeed = 1e-3 * (cw ? -1 : 1);
         }
 
         public void StopRotating()
         {
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
-            player.Tank.RotationSpeed = 0;
+            player.Tank.RotSpeed = 0;
         }
 
         public void StartMoving(bool forward)

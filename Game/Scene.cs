@@ -80,15 +80,18 @@ namespace TanksIO.Game
 
             public void Shoot()
             {
-                Player player;
-                _scene.Players.TryGetValue(_playerId, out player);
+                _scene.Players.TryGetValue(_playerId, out Player player);
+
+                Vec2 turretDir = player.Tank.Turret.Dir;
 
                 Bullet bullet = new DefaultBullet(_playerId);
                 bullet.Transform(new Mat2x3(
-                    new(player.Tank)    
+                    turretDir,
+                    new(-turretDir.Y, turretDir.X),
+                    player.Tank.Pos + turretDir * 0.5 // For now a constant (offset from the center of the tank)
                 ));
 
-                _scene.Bullets.Add("b" + DateTime.Now.Minute + DateTime.Now.Second + DateTime.Now.Millisecond, );
+                _scene.Bullets.Add("b" + DateTime.Now.Minute + DateTime.Now.Second + DateTime.Now.Millisecond, bullet);
             }
         }
     }
