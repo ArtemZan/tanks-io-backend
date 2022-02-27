@@ -64,13 +64,13 @@ namespace TanksIO.Sockets
         /// <returns>The created player</returns>
         public Player CreatePlayer(string id)
         {
-            Player player = new Player(id);
+            Player player = new(id);
             player.Tank = new DefaultTank(id);
 
-            _game.Players.Add(player.Id, player);
+            _game.Scene.Players.Add(player.Id, player);
             Send(GameEventType.PlayerJoined, id);
 
-            if(_game.Players.Count >= 2)
+            if(_game.Scene.Players.Count >= 2)
             {
                 StartGame();
             }
@@ -88,11 +88,11 @@ namespace TanksIO.Sockets
         /// <returns>The created player</returns>
         public Player RemovePlayer(string id)
         {
-            _game.Players.Remove(id, out Player player);
+            _game.Scene.Players.Remove(id, out Player player);
 
             Send(GameEventType.PlayerLeft, id);
 
-            if (_game.Players.Count <= 1 /* For now always 1 */)
+            if (_game.Scene.Players.Count <= 1 /* For now always 1 */)
             {
                 StopGame();
             }
@@ -103,7 +103,7 @@ namespace TanksIO.Sockets
         public Player GetPlayer(string id)
         {
             Player player;
-            _game.Players.TryGetValue(id, out player);
+            _game.Scene.Players.TryGetValue(id, out player);
             return player;
         }
 
@@ -114,7 +114,7 @@ namespace TanksIO.Sockets
         {
             Send(new PayloadEvent(GameEventType.GameStarted));
             _game.Start();
-            _game.UpdateAll();
+            _game.Scene.UpdateAll();
         }
 
         public void StopGame()
@@ -126,7 +126,7 @@ namespace TanksIO.Sockets
 
         public void Send(GameEvent @event)
         {
-            foreach (KeyValuePair<string, Player> pair in _game.Players)
+            foreach (KeyValuePair<string, Player> pair in _game.Scene.Players)
             {
                 GameHub.context.Clients.Client(pair.Key).SendAsync(@event.TypeToString(), @event.GetPayload(pair.Key));
                 //Console.WriteLine("Sent message to " + pair.Key + ": " + @event.TypeToString() + "[ " + @event.GetPayload(pair.Key) + " ]");

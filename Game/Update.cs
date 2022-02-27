@@ -78,7 +78,7 @@ namespace TanksIO.Game
 
         public override string ToString()
         {
-            return new JSON().Set("player", Player).Set("obj", new JSON().PushAll(Obj)).ToString();
+            return new JSON().Set("obj", new JSON().PushAll(Obj)).Set("player", Player).ToString();
         }
     }
 }

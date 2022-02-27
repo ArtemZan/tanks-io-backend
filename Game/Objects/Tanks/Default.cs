@@ -8,8 +8,8 @@ namespace TanksIO.Game.Objects.Tanks
         public DefaultTank(string id)
             : base(new(6, 6))
         {
-            Add(new Rectangle(new(2, 5)));
-            Add(new Rectangle(new(0.15, 3)).Transform(new Mat2x3(new(1, 0), new(0, 1), new(0, 2.4))));
+            Merge(new Rectangle(new(2, 5)));
+            Merge(new Rectangle(new(0.15, 3)).Transform(new Mat2x3(new(1, 0), new(0, 1), new(0, 2.4))));
         }
 
         protected override double GetTurretRotationSpeed()

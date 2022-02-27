@@ -8,5 +8,11 @@ namespace TanksIO.Game.Objects
         {
             Id = id;
         }
+
+        public GameObject(string id, Mesh mesh)
+            :base(mesh)
+        {
+            Id = id;
+        }
     }
 }

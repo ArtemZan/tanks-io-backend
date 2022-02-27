@@ -13,9 +13,7 @@ namespace TanksIO.Game
         private bool _gameRuns = false;
         private readonly Room _room = null;
         public Scene Scene;
-        private Update _update = new();
-        private static Mutex mutex = new Mutex();
-        public Dictionary<string, Player> Players = new();
+        private static readonly Mutex mutex = new();
 
 
         /// <summary>
@@ -53,17 +51,6 @@ namespace TanksIO.Game
             _gameRuns = false;
         }
 
-        public void UpdateObject(ObjectUpdate update)
-        {
-            _update.Obj.Add(update);
-        }
-
-        public void UpdateAll()
-        {
-            _update.Obj = Scene.GameObjects.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.GetVertices()))).ToList();
-            _update.Obj.AddRange(Players.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Tank.GetVertices()))));
-        }
-
         private void GameLoop()
         {
             const int fps = 100;
@@ -79,17 +66,19 @@ namespace TanksIO.Game
                 Thread timerThread = new(() => { Thread.Sleep(mspf); });
                 timerThread.Start();
 
-                OnUpdate(DeltaTime);
+                Scene.OnUpdate(DeltaTime);
 
                 mutex.WaitOne();
-                if (_update.Obj.Count != 0)
+
+                Update update = Scene.GetUpdate();
+                if (update.Obj.Count != 0)
                 {
-                    _room.SendUpdate(_update);
-                    _update.Obj.Clear();
+                    _room.SendUpdate(update);
+                    Scene.ClearUpdate();
                 }
                 mutex.ReleaseMutex();
 
-                _update.Player = new();
+                update.Player = new();
 
                 timerThread.Join();
 
@@ -97,22 +86,6 @@ namespace TanksIO.Game
 
                 DeltaTime = timer.ElapsedMilliseconds;
             }
-        }
-
-        private void OnUpdate(double dTime)
-        {
-            //Console.WriteLine("Time: " + dTime);
-
-            foreach((_, Player player) in Players)
-            {
-                UpdatePayload payload = player.Tank.Update(dTime);
-                if(payload != null)
-                {
-                    _update.Obj.Add(new(player.Id, payload));
-                }
-            }
-
-
         }
     }
 }

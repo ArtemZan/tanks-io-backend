@@ -1,6 +1,5 @@
 namespace TanksIO.Game
 {
-    using Math;
     using Objects.Tanks;
 
     class Player
@@ -13,6 +12,13 @@ namespace TanksIO.Game
         {
             Id = id;
         }
+
+        public void Shoot(Scene scene)
+        {
+
+        }
+
+
 
         public static bool operator ==(Player p1, Player p2)
         {

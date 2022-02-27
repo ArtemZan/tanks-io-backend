@@ -95,7 +95,7 @@ namespace TanksIO.Sockets
 
         public void Shoot()
         {
-
+            (Player player, Room room) = Rooms.FindPlayer(Context.ConnectionId);
         }
 
         public void StartRotating(bool cw)
