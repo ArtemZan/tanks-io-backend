@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Threading;
 
 namespace TanksIO.Utils
 {
@@ -8,6 +9,7 @@ namespace TanksIO.Utils
     {
         private Dictionary<string, string> _fields = new();
         private bool _isArray = false;
+        private Mutex _mutex = new Mutex();
 
         private static string Stringify(double number) => number.ToString().Replace(',', '.');
 
@@ -52,9 +54,17 @@ namespace TanksIO.Utils
 
         public JSON PushAll<T>(IEnumerable<T> values, bool wrapValuesInQuotes = false)
         {
-            foreach (T value in values)
+            if(values == null)
             {
-                Push(value, wrapValuesInQuotes);
+                return this;
+            }
+
+            lock (values)
+            {
+                for(int i = 0; i < values.Count(); i++)
+                {
+                    Push(values.ElementAt(i), wrapValuesInQuotes);
+                }
             }
 
             return this;
@@ -62,13 +72,13 @@ namespace TanksIO.Utils
 
         public JSON Merge(JSON json)
         {
-            if(_isArray || json._isArray)
+            if (_isArray || json._isArray)
             {
-                Console.WriteLine("Connot merge JSON arrays!");
+                Console.WriteLine("Connot merge JSON arrays! (Maybe you wanted to call PushAll ?)");
                 return this;
             }
 
-            foreach((string key, string value) in json._fields)
+            foreach ((string key, string value) in json._fields)
             {
                 _fields.Add(key, value);
             }

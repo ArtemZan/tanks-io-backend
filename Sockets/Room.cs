@@ -21,6 +21,8 @@ namespace TanksIO.Sockets
             _game = new(this);
         }
 
+        public Scene Scene => _game.Scene;
+
         public static bool operator==(Room r1, Room r2)
         {
             if ((object)r1 == null && (object)r2 == null)

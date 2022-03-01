@@ -13,7 +13,6 @@ namespace TanksIO.Game
         private bool _gameRuns = false;
         private readonly Room _room = null;
         public Scene Scene;
-        private static readonly Mutex mutex = new();
 
 
         /// <summary>
@@ -68,15 +67,17 @@ namespace TanksIO.Game
 
                 Scene.OnUpdate(DeltaTime);
 
-                mutex.WaitOne();
 
                 Update update = Scene.GetUpdate();
-                if (update.Obj.Count != 0)
+
+                lock (update.Obj)
                 {
-                    _room.SendUpdate(update);
-                    Scene.ClearUpdate();
+                    if (update.Obj.Count != 0)
+                    {
+                        _room.SendUpdate(update);
+                        Scene.ClearUpdate();
+                    }
                 }
-                mutex.ReleaseMutex();
 
                 update.Player = new();
 
@@ -84,7 +85,7 @@ namespace TanksIO.Game
 
                 timer.Stop();
 
-                DeltaTime = timer.ElapsedMilliseconds;
+                DeltaTime = timer.ElapsedMilliseconds * 1e-3;
             }
         }
     }

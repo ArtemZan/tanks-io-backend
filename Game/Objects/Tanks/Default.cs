@@ -15,7 +15,7 @@ namespace TanksIO.Game.Objects.Tanks
 
         protected override double GetTurretRotationSpeed()
         {
-            const double rotSpeedK = 0.003;
+            const double rotSpeedK = 3;
             double rotSpeed = 0;
 
             double absRot = Turret.Rot + Rot;

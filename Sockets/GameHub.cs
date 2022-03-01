@@ -96,13 +96,15 @@ namespace TanksIO.Sockets
         public void Shoot()
         {
             (Player player, Room room) = Rooms.FindPlayer(Context.ConnectionId);
+
+            room.Scene.PlayerAction(player).Shoot();
         }
 
         public void StartRotating(bool cw)
         {
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
-            player.Tank.RotSpeed = 1e-3 * (cw ? -1 : 1);
+            player.Tank.RotSpeed = 1 * (cw ? -1 : 1);
         }
 
         public void StopRotating()
@@ -116,7 +118,7 @@ namespace TanksIO.Sockets
         {
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
-            player.Tank.Speed = 5e-3 * (forward ? 1 : -1);
+            player.Tank.Speed = 5 * (forward ? 1 : -1);
         }
 
         public void StopMoving()

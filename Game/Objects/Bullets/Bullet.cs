@@ -1,6 +1,6 @@
 namespace TanksIO.Game.Objects.Bullets
 {
-    abstract class Bullet : Mesh
+    abstract class Bullet : DynamicMesh
     {
         public string EmitterId;
 

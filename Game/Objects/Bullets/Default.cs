@@ -6,7 +6,8 @@ namespace TanksIO.Game.Objects.Bullets
         public DefaultBullet(string emitterId)
             :base(emitterId)
         {
-            Merge(new Rectangle(new(0.25, 0.7)));
+            Speed = 50;
+            Merge(new Rectangle(new(0.7, 0.25)));
         }
     }
 }

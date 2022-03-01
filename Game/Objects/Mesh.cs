@@ -275,6 +275,11 @@ namespace TanksIO.Game.Objects
             }
         }
 
+        /// <summary>
+        /// Updates mesh and returns information about the update
+        /// </summary>
+        /// <param name="dTime">Time since last update in seconds. For the first update should be 0</param>
+        /// <returns></returns>
         public virtual UpdatePayload Update(double dTime) { return null; }
     }
 }

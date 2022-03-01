@@ -7,6 +7,7 @@ namespace TanksIO.Game
     using Objects.Bullets;
     using Math;
     using ObjectsContainer = Dictionary<string, Objects.Mesh>;
+    using TanksIO.Utils;
 
     class Scene
     {
@@ -23,8 +24,8 @@ namespace TanksIO.Game
 
         public void UpdateAll()
         {
-            _update.Obj = GameObjects.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.GetOwnVertices()))).ToList();
-            _update.Obj.AddRange(Players.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Tank.GetOwnVertices()))));
+            _update.Obj = GameObjects.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.GetVertices()))).ToList();
+            _update.Obj.AddRange(Players.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Tank.GetVertices()))));
         }
 
         public void UpdateObject(ObjectUpdate update)
@@ -39,15 +40,45 @@ namespace TanksIO.Game
 
         public void OnUpdate(double dTime)
         {
-            //Console.WriteLine("Time: " + dTime);
-
-            foreach ((_, Player player) in Players)
+            lock (this)
             {
-                UpdatePayload payload = player.Tank.Update(dTime);
-                if (payload != null)
+                //Console.WriteLine("Lock");
+                foreach ((_, Player player) in Players)
                 {
-                    _update.Obj.Add(new(player.Id, payload));
+                    UpdatePayload payload = player.Tank.Update(dTime);
+                    if (payload != null)
+                    {
+                        _update.Obj.Add(new(player.Id, payload));
+                    }
                 }
+
+                List<string> removedBullets = new();
+
+                foreach ((string id, Bullet bullet) in Bullets)
+                {
+                    if (bullet.Pos.Length() > 1e3)
+                    {
+                        removedBullets.Add(id);
+                        _update.Obj.Add(new(id, new VerticesUpdatePayload(null)));
+                        //Console.WriteLine("Add empty bullet update: " + id);
+                        continue;
+                    }
+
+                    //Console.WriteLine("Update bullet: " + id);
+                    UpdatePayload payload = bullet.Update(dTime);
+                    if (payload != null)
+                    {
+                        _update.Obj.Add(new(id, payload));
+                    }
+                }
+
+                foreach (string id in removedBullets)
+                {
+                    Bullets.Remove(id);
+                    //Console.WriteLine("Remove bullet: " + id);
+                }
+
+                //Console.WriteLine("Unlock");
             }
         }
 
@@ -62,36 +93,48 @@ namespace TanksIO.Game
         }
 
 
-        public PlayerActions PlayerAction(string playerId)
+        public PlayerActions PlayerAction(Player player)
         {
-            return new PlayerActions(this, playerId);
+            return new PlayerActions(this, player);
         }
 
         public class PlayerActions
         {
             private Scene _scene;
-            private string _playerId;
+            private Player _player;
 
-            public PlayerActions(Scene scene, string playerId)
+            public PlayerActions(Scene scene, Player player)
             {
                 _scene = scene;
-                _playerId = playerId;
+                _player = player;
             }
 
             public void Shoot()
             {
-                _scene.Players.TryGetValue(_playerId, out Player player);
+                double turretRot = _player.Tank.Rot + _player.Tank.Turret.Rot;
 
-                Vec2 turretDir = player.Tank.Turret.Dir;
+                Bullet bullet = new DefaultBullet(_player.Id);
+                bullet.Rotate(turretRot);
+                bullet.Move(_player.Tank.Pos + new Vec2(System.Math.Cos(turretRot), System.Math.Sin(turretRot)) * 0.5);
 
-                Bullet bullet = new DefaultBullet(_playerId);
-                bullet.Transform(new Mat2x3(
-                    turretDir,
-                    new(-turretDir.Y, turretDir.X),
-                    player.Tank.Pos + turretDir * 0.5 // For now a constant (offset from the center of the tank)
-                ));
+                lock (_scene)
+                {
+                    //Console.WriteLine("Shoot: locked");
 
-                _scene.Bullets.Add("b" + DateTime.Now.Minute + DateTime.Now.Second + DateTime.Now.Millisecond, bullet);
+                    string id;
+                    int tail = 0;
+                    do
+                    {
+                        id = "b" + DateTime.Now.Minute + DateTime.Now.Second + DateTime.Now.Millisecond + (tail == 0 ? "" : tail);
+                        tail++;
+                    }
+                    while (_scene.Bullets.ContainsKey(id));
+
+                    _scene.UpdateObject(new(id, new VerticesUpdatePayload(bullet.GetVertices())));
+                    _scene.Bullets.Add(id, bullet);
+
+                    //Console.WriteLine("Shoot: unlocked");
+                }
             }
         }
     }
