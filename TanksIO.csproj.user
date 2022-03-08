@@ -7,4 +7,9 @@
     <ActiveDebugProfile>TanksIO</ActiveDebugProfile>
     <ShowAllFiles>false</ShowAllFiles>
   </PropertyGroup>
+  <ItemGroup>
+    <TypeScriptCompile Update="Game\Math\Geometry.cs">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+  </ItemGroup>
 </Project>

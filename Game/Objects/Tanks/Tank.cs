@@ -1,9 +1,11 @@
 using System;
+using Box2DX.Dynamics;
+using Box2DX.Collision;
+using Box2DX.Common;
+using TanksIO.Game.Math;
 
 namespace TanksIO.Game.Objects.Tanks
 {
-    using Math;
-
     /* abstract class Tank : DynamicMesh
     {
 
@@ -141,19 +143,50 @@ namespace TanksIO.Game.Objects.Tanks
     }*/
 
 
-    abstract class Tank : DynamicMesh
+    abstract class Tank : Object
     {
-        public DynamicMesh Turret;
+        private Object _turret;
+        protected RevoluteJoint TurretJoint;
+        public float Speed = 0;
+
+        public Object Turret
+        {
+            get => _turret;
+            set
+            {
+                _turret = value;
+                RevoluteJointDef jointDef = new();
+                jointDef.Initialize(Body, _turret.Body, Body.GetPosition() + TurretOffsetFromCenter);
+                jointDef.CollideConnected = false;
+                if(MaxTurretRotAngle > 0)
+                {
+                    jointDef.EnableLimit = true;
+                    jointDef.UpperAngle = MaxTurretRotAngle;
+                    jointDef.LowerAngle = -MaxTurretRotAngle;
+                }
+
+                jointDef.MaxMotorTorque = TurretMotorTorque;
+                jointDef.EnableMotor = true;
+
+                TurretJoint = (RevoluteJoint)Body.GetWorld().CreateJoint(jointDef);
+
+                Add(value);
+            }
+        }
 
         protected Vec2 DesiredTurretDir = new(1, 0);
 
         //The machine properties
-        public readonly double MaxSpeed;
-        public readonly double BarrelLength;
+        public readonly float MaxSpeed;
+        public readonly float BarrelLength;
+        public readonly Vec2 TurretOffsetFromCenter;
+        public readonly float MaxTurretRotAngle = -1;
+        public readonly float TurretMotorTorque = 10000;
 
-        public Tank()
+        public Tank(World world)
+            : base(world)
         {
-            
+
         }
 
         public void Aim(Vec2 dir)
@@ -167,7 +200,12 @@ namespace TanksIO.Game.Objects.Tanks
 
         public override UpdatePayload Update(double dTime)
         {
-            Turret.RotSpeed = GetTurretRotationSpeed();
+            TurretJoint.MotorSpeed = (float)GetTurretRotationSpeed();
+
+            Body.ApplyForce(Dir * Speed * 10000, Pos);
+
+            //Console.WriteLine(Body.GetPosition().ToJSON() + " " + Mesh.Pos.ToJSON());
+            //Console.WriteLine(TurretJoint.MotorSpeed + " " + Turret.Rot + " " + Turret.Mesh.Rot);
 
             return base.Update(dTime);
 

@@ -2,14 +2,23 @@ using System.Collections.Generic;
 
 namespace TanksIO.Game.Maps
 {
-    using Math;
+    using Objects;
     using Objects.Shapes;
 
     class Map1 : Scene
     {
         public Map1()
+            : base(new(100, 100))
         {
-            GameObjects.Add("1", new Rectangle(new Vec2(1, 5)).Transform(new Mat2x3(new(1, 0), new(0, 1), new(-3, 0))));
+            Mesh obstMesh = new Rectangle(new(1, 5));
+
+            Object obst = new(_world, obstMesh);
+
+            obst.Mesh.MoveTo(new(-5, 0));
+
+            obst.Body.SetPosition(new(-5, 0));
+
+            GameObjects.Add("1", obst);
         }
     }
 }

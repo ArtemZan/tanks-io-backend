@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 
 namespace TanksIO.Sockets
 {
+    using Box2DX.Common;
     using Game;
     using Game.Math;
 
@@ -104,14 +105,14 @@ namespace TanksIO.Sockets
         {
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
-            player.Tank.RotSpeed = 1 * (cw ? -1 : 1);
+            player.Tank.Body.SetAngularVelocity(1 * (cw ? -1 : 1));
         }
 
         public void StopRotating()
         {
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
-            player.Tank.RotSpeed = 0;
+            player.Tank.Body.SetAngularVelocity(0);
         }
 
         public void StartMoving(bool forward)
@@ -126,6 +127,8 @@ namespace TanksIO.Sockets
             (Player player, Room _) = Rooms.FindPlayer(Context.ConnectionId);
 
             player.Tank.Speed = 0;
+
+            //player.Tank.Body.SetLinearVelocity(new());
         }
 
     }

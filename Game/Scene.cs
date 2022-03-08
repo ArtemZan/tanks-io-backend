@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Box2DX.Dynamics;
+using Box2DX.Collision;
+
 namespace TanksIO.Game
 {
+    using Box2DX.Common;
     using Objects.Bullets;
-    using Math;
-    using ObjectsContainer = Dictionary<string, Objects.Mesh>;
-    using TanksIO.Utils;
+    using Objects.Tanks;
+    
+    using ObjectsContainer = Dictionary<string, Objects.Object>;
 
     class Scene
     {
@@ -15,17 +19,23 @@ namespace TanksIO.Game
         public Dictionary<string, Player> Players = new();
         public Dictionary<string, Bullet> Bullets = new();
 
+        public World _world;
+
         private Update _update = new();
 
-        public Scene()
+        public Scene(Vec2 size)
         {
+            AABB aabb = new();
 
+            aabb.LowerBound = new((float)-size.X / 2, (float)-size.Y / 2);
+            aabb.UpperBound = new((float)size.X / 2, (float)size.Y / 2);
+            _world = new World(aabb, new(), true);
         }
 
         public void UpdateAll()
         {
-            _update.Obj = GameObjects.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.GetVertices()))).ToList();
-            _update.Obj.AddRange(Players.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Tank.GetVertices()))));
+            _update.Obj = GameObjects.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Mesh))).ToList();
+            _update.Obj.AddRange(Players.Select(pair => new ObjectUpdate(pair.Key, new VerticesUpdatePayload(pair.Value.Tank.Mesh))));
         }
 
         public void UpdateObject(ObjectUpdate update)
@@ -33,15 +43,32 @@ namespace TanksIO.Game
             _update.Obj.Add(update);
         }
 
-        public void SetPlayer(PlayerUpdate playerUpdate)
+        public void UpdatePlayer(PlayerUpdate playerUpdate)
         {
             _update.Player = playerUpdate;
         }
 
+        public Player CreatePlayer(string id)
+        {
+            Player player = new(id);
+
+            //For now always default
+            player.Tank = new DefaultTank(_world);
+            player.Tank.Body.SetPosition(new(0, Players.Count * 7 - 7));
+
+            Players.Add(id, player);
+
+            return player;
+        }
+
         public void OnUpdate(double dTime)
         {
+            _world.Step((float)dTime, 1, 1);
+
             lock (this)
             {
+                
+
                 //Console.WriteLine("Lock");
                 foreach ((_, Player player) in Players)
                 {
@@ -111,11 +138,11 @@ namespace TanksIO.Game
 
             public void Shoot()
             {
-                double turretRot = _player.Tank.Rot + _player.Tank.Turret.Rot;
+                double turretRot = _player.Tank.Turret.Rot;
 
-                Bullet bullet = new DefaultBullet(_player.Id);
-                bullet.Rotate(turretRot);
-                bullet.Move(_player.Tank.Pos + new Vec2(System.Math.Cos(turretRot), System.Math.Sin(turretRot)) * 0.5);
+                Bullet bullet = new DefaultBullet(_scene._world, _player.Id);
+                bullet.Body.SetAngle((float)turretRot);
+                bullet.Body.SetPosition(_player.Tank.Pos + new Vec2((float)System.Math.Cos(turretRot), (float)System.Math.Sin(turretRot)) * 0.5f);
 
                 lock (_scene)
                 {
@@ -130,7 +157,7 @@ namespace TanksIO.Game
                     }
                     while (_scene.Bullets.ContainsKey(id));
 
-                    _scene.UpdateObject(new(id, new VerticesUpdatePayload(bullet.GetVertices())));
+                    _scene.UpdateObject(new(id, new VerticesUpdatePayload(bullet.Mesh)));
                     _scene.Bullets.Add(id, bullet);
 
                     //Console.WriteLine("Shoot: unlocked");

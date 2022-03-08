@@ -1,19 +1,25 @@
-using System.Collections.Generic;
-using System;
+﻿using System.Collections.Generic;
+using Box2DX.Dynamics;
+using Box2DX.Common;
 using System.Linq;
 
 namespace TanksIO.Game.Objects
 {
-    using Math;
+    //using Math;
 
-    abstract class Mesh
+    class Mesh
     {
-        protected List<Vec2> Vertices = new();
-        private Vec2 _position = new();
-        private double _rotation = 0;
+        public readonly List<Vec2> Vertices = new();
+        public readonly List<uint> Indices = new();
 
-        protected Dictionary<uint, Mesh> Children;
-        public Mesh Parent;
+        private Vec2 _pos = new();
+        private float _rot = 0;
+
+        public Vec2 Pos => _pos;
+        public float Rot => _rot;
+
+
+        private List<FixtureDef> _fixtureDefs = new();
 
         public Mesh()
         {
@@ -22,264 +28,122 @@ namespace TanksIO.Game.Objects
 
         public Mesh(Mesh mesh)
         {
-            Vertices = mesh.Vertices.GetRange(0, mesh.Vertices.Count);
-        }
-
-        public Vec2 Pos => _position;
-        public double Rot => _rotation;
-        public Vec2 Dir => new(System.Math.Cos(_rotation), System.Math.Sin(_rotation));
-
-        protected void Add(Vec2 vertex)
-        {
-            Vertices.Add(vertex);
-        }
-
-        public void Add(Mesh mesh, uint id)
-        {
-            if (Children == null)
-            {
-                Children = new();
-            }
-
-            mesh.Parent = this;
-
-            if (Children.ContainsKey(id))
-            {
-                Console.WriteLine("Warning: a mesh with such id already exists. It will be replaced with a new mesh");
-            }
-
-            Children.Add(id, mesh);
-        }
-
-        public void Add(Mesh mesh)
-        {
-            if (Children == null)
-            {
-                Children = new();
-            }
-
-            for (uint i = (uint)Children.Count; i < uint.MaxValue; i++)
-            {
-                if (!Children.ContainsKey(i))
-                {
-                    Add(mesh, i);
-                    return;
-                }
-            }
-
-            for (uint i = 0; i < (uint)Children.Count; i++)
-            {
-                if (!Children.ContainsKey(i))
-                {
-                    Add(mesh, i);
-                    return;
-                }
-            }
-
-            Console.WriteLine("Error: Mesh children number exceeds maximum allowed amount of " + uint.MaxValue + ". Child is not added");
-        }
-
-        public Mesh GetChildById(uint id)
-        {
-            Children.TryGetValue(id, out Mesh res);
-            return res;
-        }
-
-        /// <summary>
-        /// Adds vertices of a mesh to the vertices of this mesh
-        /// </summary>
-        protected void Merge(Mesh mesh)
-        {
+            _fixtureDefs.AddRange(mesh._fixtureDefs);
             Vertices.AddRange(mesh.Vertices);
+            Indices.AddRange(mesh.Indices);
         }
 
-        public Vec2[] GetOwnVertices() => Vertices.ToArray();
-
-        public Vec2[] GetVertices()
+        public Mesh AddConvex(PolygonDef polygon)
         {
-            if (Children == null)
-            {
-                return GetOwnVertices();
-            }
+            int trianglesCount = polygon.VertexCount - 2;
 
-            List<Vec2> res = new(GetOwnVertices());
+            AddPolygonIndices(trianglesCount);
 
-            foreach ((_, Mesh child) in Children)
-            {
-                res.AddRange(child.GetVertices());
-            }
+            Vertices.AddRange(polygon.Vertices.SkipLast(Settings.MaxPolygonVertices - polygon.VertexCount));
 
-            return res.ToArray();
-        }
-
-        /// <summary>
-        /// Transforms a range of vertices
-        /// </summary>
-        /// <param name="startIndex"> The first index of the vertices to be transformed </param>
-        /// <param name="endIndex"> The FIRST index of the vertices after the startIndex NOT to be transformed </param>
-        /// <param name="origin"> The origin of the transformation </param>
-        /// <returns> This mesh </returns>
-        protected Mesh Transform(Mat2x3 transform, int startIndex, int endIndex, Vec2 origin = new())
-        {
-            if (startIndex < 0 || endIndex > Vertices.Count)
-            {
-                Console.WriteLine("Error: indices given to 'Transform' are out of range");
-            }
-
-            for (int v = startIndex; v < endIndex; v++)
-            {
-                Vertices[v] -= origin;
-                Vertices[v] = transform * new Vec3(Vertices[v], 1);
-                Vertices[v] += origin;
-            }
+            _fixtureDefs.Add(polygon);
 
             return this;
         }
 
-        /// <summary>
-        /// Transforms a range of vertices
-        /// </summary>
-        /// <param name="startIndex"> The first index of the vertices to be transformed </param>
-        /// <param name="endIndex"> The FIRST index of the vertices after the startIndex NOT to be transformed </param>
-        /// <param name="origin"> The origin of the transformation </param>
-        /// <returns> This mesh </returns>
-        protected Mesh Transform(Mat2 transform, int startIndex, int endIndex, Vec2 origin = new())
+        public Mesh AddCircle(CircleDef circle)
         {
-            if (startIndex < 0 || endIndex > Vertices.Count)
+            const int vertCount = 16;
+            int trianglesCount = vertCount - 2;
+
+            AddPolygonIndices(trianglesCount);
+
+            Vertices.Capacity += vertCount;
+            for(int v = 0; v < vertCount; v++)
             {
-                Console.WriteLine("Error: indices given to 'Transform' are out of range");
+                double rotation = (double)v / vertCount * 2 * System.Math.PI;
+                Vertices.Add(new Vec2((float)System.Math.Cos(rotation), (float)System.Math.Sin(rotation)) + circle.LocalPosition);
             }
 
-            for (int v = startIndex; v < endIndex; v++)
-            {
-                Vertices[v] -= origin;
-                Vertices[v] = transform * Vertices[v];
-                Vertices[v] += origin;
-            }
+            _fixtureDefs.Add(circle);
 
             return this;
         }
 
-        /// <summary>
-        /// Transorfms the mesh and returns it
-        /// </summary> 
-        public Mesh Transform(Mat2 transform, Vec2 origin = new())
+        public Mesh Combine(Mesh mesh)
         {
-            return Transform(transform, 0, Vertices.Count, origin);
+            Indices.AddRange(mesh.Indices.Select(i => (uint)(i + Vertices.Count)));
+            Vertices.AddRange(mesh.Vertices);
+            _fixtureDefs.AddRange(mesh._fixtureDefs);
+
+            return this;
         }
 
-        /// <summary>
-        /// Transorfms the mesh and returns it
-        /// </summary>
-        public Mesh Transform(Mat2x3 transform, Vec2 origin = new())
+        private void AddPolygonIndices(int trianglesCount)
         {
-            return Transform(transform, 0, Vertices.Count, origin);
+            int indicesOffset = Vertices.Count;
+
+            Indices.Capacity += trianglesCount * 3;
+
+            for (int i = 0; i < trianglesCount; i++)
+            {
+                Indices.Add((uint)indicesOffset); // The pivot point
+                Indices.Add((uint)(indicesOffset + i + 1));
+                Indices.Add((uint)(indicesOffset + i + 2));
+            }
         }
 
-        /// <summary>
-        /// Moves the mesh with all children
-        /// </summary>
+        public void CreateFixtures(Body body)
+        {
+            foreach (FixtureDef fixtureDef in _fixtureDefs)
+            {
+                body.CreateFixture(fixtureDef).ComputeMass(out Box2DX.Collision.MassData massData);
+            }
+            body.SetMassFromShapes();
+
+            _fixtureDefs.Clear();
+        }
+
+        public Mesh MoveTo(Vec2 pos)
+        {
+            return Move(pos - Pos);
+        }
+
         public Mesh Move(Vec2 offset)
-        {
-            MoveVertices(offset);
-
-            _position += offset;
-
-            return this;
-        }
-
-        /// <summary>
-        /// Moves the mesh itself (without children)
-        /// </summary>
-        public Mesh MoveSelf(Vec2 offset)
-        {
-            MoveOwnVertices(offset);
-
-            _position += offset;
-
-            return this;
-        }
-
-
-        /// <summary>
-        /// Moves the mesh itself (without children) without updating '_position' ('Pos')
-        /// </summary>
-        private void MoveOwnVertices(Vec2 offset)
         {
             for (int v = 0; v < Vertices.Count; v++)
             {
                 Vertices[v] += offset;
             }
-        }
 
-        /// <summary>
-        /// Moves the mesh with all children without updating '_position' ('Pos')
-        /// </summary>
-        private void MoveVertices(Vec2 offset)
-        {
-            MoveOwnVertices(offset);
-
-            if (Children != null)
-            {
-                foreach ((_, Mesh mesh) in Children)
-                {
-                    mesh.MoveVertices(offset);
-                }
-            }
-        }
-
-        public Mesh Rotate(double angle, Vec2 origin)
-        {
-            RotateVertices(angle, origin);
-
-            _rotation += angle;
+            _pos += offset;
 
             return this;
         }
 
-        public Mesh Rotate(double angle)
+        public Mesh RotateTo(float rotation)
         {
-            return Rotate(angle, Pos + (Parent == null ? new() : Parent.Pos));
+            return Rotate(rotation - _rot);
         }
 
-        public Mesh RotateSelf(double angle, Vec2 origin)
+        public Mesh Rotate(float angle)
         {
-            RotateOwnVertices(angle, origin);
+            Mat22 trfm = new(angle);
 
-            _rotation += angle;
+            for(int v = 0; v < Vertices.Count; v++)
+            {
+                Vertices[v] = trfm.Solve(Vertices[v] - _pos) + _pos;
+            }
+
+            _rot += angle;
 
             return this;
         }
 
-        private void RotateOwnVertices(double angle, Vec2 origin)
+        public bool ValidateIndices()
         {
-            Mat2 mat = Mat2.Rotation(angle);
-
-            for (int v = 0; v < Vertices.Count; v++)
+            foreach (uint i in Indices)
             {
-                Vertices[v] = mat * (Vertices[v] - origin) + origin;
+                if (i >= Vertices.Count)
+                    return false;
             }
-        }
 
-        // To be optimised: the rotation matrix is created for every children
-        private void RotateVertices(double angle, Vec2 origin)
-        {
-            RotateOwnVertices(angle, origin);
-            
-            if (Children != null)
-            {
-                foreach ((_, Mesh mesh) in Children)
-                {
-                    mesh.RotateVertices(angle, origin);
-                }
-            }
+            return true;
         }
-
-        /// <summary>
-        /// Updates mesh and returns information about the update
-        /// </summary>
-        /// <param name="dTime">Time since last update in seconds. For the first update should be 0</param>
-        /// <returns></returns>
-        public virtual UpdatePayload Update(double dTime) { return null; }
     }
 }

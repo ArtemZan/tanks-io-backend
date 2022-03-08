@@ -1,13 +1,15 @@
+using Box2DX.Dynamics;
+
 namespace TanksIO.Game.Objects.Bullets
 {
     using Shapes;
     class DefaultBullet : Bullet
     {
-        public DefaultBullet(string emitterId)
-            :base(emitterId)
+        public DefaultBullet(World world, string emitterId)
+            :base(world, emitterId)
         {
-            Speed = 50;
-            Merge(new Rectangle(new(0.7, 0.25)));
+            Body.SetLinearVelocity(Dir * 50);
+            Mesh.Combine(new Rectangle(new(0.7f, 0.25f)));
         }
     }
 }

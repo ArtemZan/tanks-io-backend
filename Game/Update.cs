@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using Box2DX.Common;
 
 namespace TanksIO.Game
 {
-    using Math;
+    using TanksIO.Game.Math;
+    using TanksIO.Game.Objects;
     using Utils;
 
     struct PlayerUpdate
@@ -19,7 +21,7 @@ namespace TanksIO.Game
 
         public override string ToString()
         {
-            return new JSON().Set("dir", Dir).Set("pos", Pos).ToString();
+            return new JSON().Set("dir", Dir.ToJSON()).Set("pos", Pos.ToJSON()).ToString();
         }
     }
     record ObjectUpdate(string Id, UpdatePayload payload)
@@ -31,6 +33,13 @@ namespace TanksIO.Game
     }
 
     abstract class UpdatePayload {
+        public readonly bool IsTransform;
+
+        public UpdatePayload(bool isTransform)
+        {
+            IsTransform = isTransform;
+        }
+
         public abstract JSON ToJSON();
 
         public override string ToString()
@@ -41,10 +50,11 @@ namespace TanksIO.Game
 
     class TransformUpdatePayload : UpdatePayload
     {
-        public Mat2x3 Transform;
+        public Math.Mat2x3 Transform;
         public Vec2 Origin;
 
-        public TransformUpdatePayload(Mat2x3 transform, Vec2 origin)
+        public TransformUpdatePayload(Math.Mat2x3 transform, Vec2 origin)
+            :base(true)
         {
             Transform = transform;
             Origin = origin;
@@ -52,22 +62,23 @@ namespace TanksIO.Game
 
         public override JSON ToJSON()
         {
-            return new JSON().Set("trfm", Transform).Set("or", Origin);
+            return new JSON().Set("trfm", Transform).Set("or", Origin.ToJSON());
         }
     }
 
     class VerticesUpdatePayload : UpdatePayload
     {
-        public Vec2[] Vertices;
+        public Mesh Mesh;
 
-        public VerticesUpdatePayload(Vec2[] vertices)
+        public VerticesUpdatePayload(Mesh mesh)
+            :base(false)
         {
-            Vertices = vertices;
+            Mesh = mesh;
         }
 
         public override JSON ToJSON()
         {
-            return new JSON().Set("vert", new JSON().PushAll(Vertices));
+            return new JSON().Set("vert", new JSON().PushAll(Mesh.Vertices.Select(v => v.ToJSON()))).Set("ind", new JSON().PushAll(Mesh.Indices));
         }
     }
 

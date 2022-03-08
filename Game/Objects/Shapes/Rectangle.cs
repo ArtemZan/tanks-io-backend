@@ -1,19 +1,20 @@
+using Box2DX.Dynamics;
+using Box2DX.Common;
+
 namespace TanksIO.Game.Objects.Shapes
 {
-    using Math;
     class Rectangle : Mesh
     {
-        public Rectangle(Vec2 size)
+        public Rectangle(Vec2 size, float density = 1000)
         {
-            double x = size.X / 2;
-            double y = size.Y / 2;
+            float x = size.X / 2;
+            float y = size.Y / 2;
 
-            Add(new Vec2(-x, -y));
-            Add(new Vec2(x, -y));
-            Add(new Vec2(x, y));
-            Add(new Vec2(x, y));
-            Add(new Vec2(-x, -y));
-            Add(new Vec2(-x, y));
+            PolygonDef rect = new();
+            rect.SetAsBox(x, y);
+            rect.Density = density;
+
+            AddConvex(rect);
         }
     }
 }
